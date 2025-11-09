@@ -5,3 +5,6 @@
 
 # Prototypeing
 prototyping.ipynb
+
+# Local disk cache for bestlaps (do not commit)
+.cache/

@@ -83,6 +83,11 @@ Note: run these commands from the repository root.
 
 Applikasjonen vil være tilgjengelig på http://localhost:8501
 
+## Cache og deploy
+
+- Lokalt: appen bruker en lokal disk-cache i `.cache/bestlaps.parquet` for å unngå å scrape Sporthive hver gang du åpner siden. Denne mappen er i `.gitignore` og blir ikke sjekket inn i repoet.
+- Produksjon (Streamlit Community Cloud): appen benytter Streamlits server-side caching (`st.cache_data`). Disk-cachen påvirker ikke Cloud-deploy siden den bare finnes lokalt.
+
 ## Utvikling
 
 ### Installere utviklingsverktøy
