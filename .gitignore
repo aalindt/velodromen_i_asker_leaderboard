@@ -1,0 +1,7 @@
+### Filer som ignoreres av GitHub
+
+#Virtual environment
+.venv
+
+# Prototypeing
+prototyping.ipynb
