@@ -18,5 +18,5 @@ http:
 
 app:
   refresh_minutes: 1        # Hvor ofte data skal oppdateres (minutter)
-  page_title: "Velodromen i Asker – Månedlig og daglig leaderboard"
+  page_title: "Velodromen i Asker – Leaderboard"
   page_icon: "🚴"
