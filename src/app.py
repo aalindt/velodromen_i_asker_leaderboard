@@ -347,7 +347,7 @@ def ensure_data_loaded(status_ph=None):
 
         # Førstegangs lasting på instans uten cache-fil → vis progress bar
         if not CACHE_PATH.exists():
-            status_ph.info("Første gangs lasting av leaderboard-data...")
+            status_ph.info("Førstegangs lasting av leaderboard-data...")
             progress = st.progress(0.0)
             label = st.empty()
 
