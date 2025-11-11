@@ -51,6 +51,7 @@ CACHE_TTL = REFRESH_INTERVAL
 
 def fetch_data(
     existing_ids: set | None = None,
+    force_refresh_ids: set | None = None,
     progress=None,
     label_placeholder=None,
 ) -> pd.DataFrame:
@@ -59,18 +60,23 @@ def fetch_data(
 
     - Hvis existing_ids er satt:
         henter KUN nye activity_id's som ikke finnes der.
+    - Hvis force_refresh_ids er satt:
+        henter/oppdaterer ALL bestlaps for disse activity_id's (inkludert ongoing).
     - Hvis progress/label_placeholder er satt:
         brukes til UI-feedback ved eksplisitt/førstegangs last.
     """
     activities = get_current_month_activities()
     existing_ids = existing_ids or set()
+    force_refresh_ids = force_refresh_ids or set()
 
     new_acts = []
     for act in activities:
         act_id = act.get("activity_id") or act.get("id")
-        if not act_id or act_id in existing_ids:
+        if not act_id:
             continue
-        new_acts.append(act)
+        # Include activity if: (1) it's new, OR (2) it's marked for forced refresh
+        if act_id not in existing_ids or act_id in force_refresh_ids:
+            new_acts.append(act)
 
     total = len(new_acts)
 
@@ -228,13 +234,39 @@ def load_bestlaps_cached() -> pd.DataFrame:
     """
 
     def background_refresh(existing_df: pd.DataFrame):
+        """
+        Smart auto-refresh: 
+        - Fetch new activities (never seen before).
+        - Re-fetch ongoing activities (< 6 hours old) to catch updated times.
+        - Skip old activities (already finalized).
+        """
         try:
             if "activity_id" in existing_df.columns:
                 existing_ids = set(existing_df["activity_id"].unique())
             else:
                 existing_ids = set()
 
-            new_raw = fetch_data(existing_ids=existing_ids)
+            # Identifiser pågående aktiviteter (< 6 timer gamle) for re-fetch
+            ongoing_activity_ids = set()
+            if "Dato" in existing_df.columns:
+                cutoff = datetime.now() - timedelta(hours=6)
+                try:
+                    # Konverter Dato til datetime for sammenligning
+                    date_col = existing_df["Dato"]
+                    mask = date_col.apply(
+                        lambda d: datetime.combine(d, datetime.min.time()) > cutoff
+                        if isinstance(d, pd.Timestamp) or hasattr(d, "date")
+                        else False
+                    )
+                    ongoing_activity_ids = set(existing_df.loc[mask, "activity_id"].unique())
+                except Exception:
+                    pass
+
+            # Hent: nye activities + oppdater pågående
+            new_raw = fetch_data(
+                existing_ids=existing_ids,
+                force_refresh_ids=ongoing_activity_ids
+            )
             if new_raw.empty:
                 updated = mark_generated(existing_df, datetime.now())
                 write_cache(updated)
