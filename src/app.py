@@ -173,9 +173,19 @@ def compute_views(df: pd.DataFrame):
     )
 
     # Topp 10 i dag
+    # Konverter Dato til date hvis det er pd.Timestamp (skjer ved parquet-lesing)
     today = datetime.today().date()
+    df_today_filter = df.copy()
+    if "Dato" in df_today_filter.columns:
+        df_today_filter["Dato"] = df_today_filter["Dato"].apply(
+            lambda d: d.date() if hasattr(d, "date") else d
+        )
+    
     df_today_top10 = (
-        df[df["Dato"] == today]
+        df_today_filter[df_today_filter["Dato"] == today]
+        .sort_values("Rundetid")
+        .groupby("Navn", as_index=False)
+        .first()
         .sort_values("Rundetid")
         .head(10)
         .drop(columns=["Dato", "activity_id"], errors="ignore")
